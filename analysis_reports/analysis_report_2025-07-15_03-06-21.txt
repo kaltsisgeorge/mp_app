@@ -1,0 +1,33 @@
+Food Analysis Report - 2025-07-15_03-06-21
+----------------------------------------
+
+FOOD: Double Cheeseburger
+QUANTITY: 250g
+CALORIES: 750 kcal
+MICROPLASTICS: 0.5 mg/kg
+RISK: LOW
+
+FOOD: Lettuce
+QUANTITY: 50g
+CALORIES: 10 kcal
+MICROPLASTICS: 0.2 mg/kg
+RISK: LOW
+
+FOOD: Tomato
+QUANTITY: 30g
+CALORIES: 10 kcal
+MICROPLASTICS: 0.1 mg/kg
+RISK: LOW
+
+FOOD: Onion
+QUANTITY: 20g
+CALORIES: 5 kcal
+MICROPLASTICS: 0.1 mg/kg
+RISK: LOW
+
+FOOD: Cheese
+QUANTITY: 40g
+CALORIES: 180 kcal
+MICROPLASTICS: 0.3 mg/kg
+RISK: LOW
+

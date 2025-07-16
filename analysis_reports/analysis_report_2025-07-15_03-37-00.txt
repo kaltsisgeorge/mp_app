@@ -1,0 +1,9 @@
+Food Analysis Report - 2025-07-15_03-37-00
+----------------------------------------
+
+FOOD: Red Apple
+QUANTITY: 200g
+CALORIES: 95 kcal
+MICROPLASTICS: 0.5 mg/kg
+RISK: LOW
+
