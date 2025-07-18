@@ -1,0 +1,8 @@
+Food Analysis Report - 2025-07-18_21-52-28
+----------------------------------------
+
+RAW ANALYSIS:
+NO FOOD DETECTED
+
+
+PARSED RESULTS:

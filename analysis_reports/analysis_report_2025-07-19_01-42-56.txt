@@ -1,0 +1,18 @@
+Food Analysis Report - 2025-07-19_01-42-56
+----------------------------------------
+
+RAW ANALYSIS:
+FOOD: Green Bell Pepper
+QUANTITY: 150g
+CALORIES: 20 kcal
+MICROPLASTICS: 0.5 mg/kg
+RISK: LOW
+
+
+PARSED RESULTS:
+FOOD: Green Bell Pepper
+QUANTITY: 150g
+CALORIES: 20 kcal
+MICROPLASTICS: 0.5 mg/kg
+RISK: LOW
+

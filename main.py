@@ -11,6 +11,7 @@ import requests
 import os
 import logging
 import glob
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -256,6 +257,147 @@ Do not include any additional text, explanations, or commentary."""
         
         return reports
 
+    def get_analysis_stats(self):
+        """Calculate analysis statistics from reports."""
+        try:
+            reports = self.get_all_reports()
+            
+            if not reports:
+                return {
+                    "total_analyses": 0,
+                    "total_calories": 0,
+                    "total_microplastics": 0,
+                    "average_microplastics": 0,
+                    "risk_distribution": {"LOW": 0, "MEDIUM": 0, "HIGH": 0},
+                    "recent_analyses": 0,
+                    "top_foods": []
+                }
+            
+            total_analyses = len(reports)
+            total_calories = 0
+            total_microplastics = 0
+            risk_counts = {"low": 0, "medium": 0, "high": 0}
+            food_counts = {}
+            recent_analyses = 0
+            
+            # Get analyses from last 7 days
+            week_ago = datetime.now() - timedelta(days=7)
+            
+            for report in reports:
+                # Parse report content for stats
+                content = report["content"]
+                
+                # Check if analysis is recent
+                report_date = datetime.fromisoformat(report["timestamp"])
+                if report_date > week_ago:
+                    recent_analyses += 1
+                
+                # Extract data from parsed results section
+                lines = content.split('\n')
+                current_food = None
+                
+                for line in lines:
+                    line = line.strip()
+                    if line.startswith("FOOD:"):
+                        current_food = line.split(":", 1)[1].strip()
+                        food_counts[current_food] = food_counts.get(current_food, 0) + 1
+                    elif line.startswith("CALORIES:"):
+                        try:
+                            calories = int(re.findall(r'\d+', line)[0])
+                            total_calories += calories
+                        except (ValueError, IndexError):
+                            pass
+                    elif line.startswith("MICROPLASTICS:"):
+                        try:
+                            microplastics = float(re.findall(r'[\d.]+', line)[0])
+                            total_microplastics += microplastics
+                        except (ValueError, IndexError):
+                            pass
+                    elif line.startswith("RISK:"):
+                        risk_level = line.split(":", 1)[1].strip().lower()
+                        if risk_level in risk_counts:
+                            risk_counts[risk_level] += 1
+            
+            # Calculate averages
+            avg_microplastics = total_microplastics / total_analyses if total_analyses > 0 else 0
+            
+            # Get top 5 foods
+            top_foods = sorted(food_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+            top_foods = [{"name": food, "count": count} for food, count in top_foods]
+            
+            return {
+                "total_analyses": total_analyses,
+                "total_calories": total_calories,
+                "total_microplastics": round(total_microplastics, 2),
+                "average_microplastics": round(avg_microplastics, 2),
+                "risk_distribution": risk_counts,
+                "recent_analyses": recent_analyses,
+                "top_foods": top_foods
+            }
+        
+        except Exception as e:
+            logger.error(f"Error calculating analysis stats: {e}")
+            return {
+                "total_analyses": 0,
+                "total_calories": 0,
+                "total_microplastics": 0,
+                "average_microplastics": 0,
+                "risk_distribution": {"low": 0, "medium": 0, "high": 0},
+                "recent_analyses": 0,
+                "top_foods": []
+            }
+
+    def get_user_stats(self):
+        """Get user-related statistics."""
+        try:
+            stats = self.get_analysis_stats()
+            
+            # Calculate some user-focused metrics
+            total_analyses = stats["total_analyses"]
+            avg_calories_per_analysis = stats["total_calories"] / total_analyses if total_analyses > 0 else 0
+            
+            # Determine user activity level
+            if stats["recent_analyses"] >= 10:
+                activity_level = "Very Active"
+            elif stats["recent_analyses"] >= 5:
+                activity_level = "Active"
+            elif stats["recent_analyses"] >= 1:
+                activity_level = "Moderate"
+            else:
+                activity_level = "New User"
+            
+            # Calculate health score based on risk distribution
+            risk_dist = stats["risk_distribution"]
+            total_risk_items = sum(risk_dist.values())
+            if total_risk_items > 0:
+                health_score = round(
+                    (risk_dist["low"] * 100 + risk_dist["medium"] * 60 + risk_dist["high"] * 20) / total_risk_items
+                )
+            else:
+                health_score = 100
+            
+            return {
+                "total_scans": total_analyses,
+                "activity_level": activity_level,
+                "average_calories_per_scan": round(avg_calories_per_analysis, 1),
+                "health_score": health_score,
+                "recent_activity": stats["recent_analyses"],
+                "microplastics_exposure": stats["average_microplastics"],
+                "favorite_foods": stats["top_foods"][:3]  # Top 3 for user stats
+            }
+        
+        except Exception as e:
+            logger.error(f"Error calculating user stats: {e}")
+            return {
+                "total_scans": 0,
+                "activity_level": "New User",
+                "average_calories_per_scan": 0,
+                "health_score": 100,
+                "recent_activity": 0,
+                "microplastics_exposure": 0,
+                "favorite_foods": []
+            }
+
 # Initialize the analyzer
 try:
     analyzer = FoodAnalyzer()
@@ -303,6 +445,38 @@ async def get_reports(limit: Optional[int] = 50):
         }
     except Exception as e:
         logger.error(f"Error fetching reports: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/analysis/stats")
+async def get_analysis_stats():
+    """Get analysis statistics."""
+    if not analyzer:
+        raise HTTPException(status_code=500, detail="Analyzer not initialized")
+    
+    try:
+        stats = analyzer.get_analysis_stats()
+        return {
+            "success": True,
+            "stats": stats
+        }
+    except Exception as e:
+        logger.error(f"Error fetching analysis stats: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/user/stats")
+async def get_user_stats():
+    """Get user statistics."""
+    if not analyzer:
+        raise HTTPException(status_code=500, detail="Analyzer not initialized")
+    
+    try:
+        stats = analyzer.get_user_stats()
+        return {
+            "success": True,
+            "stats": stats
+        }
+    except Exception as e:
+        logger.error(f"Error fetching user stats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
