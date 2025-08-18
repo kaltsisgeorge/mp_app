@@ -19,10 +19,14 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# Enable CORS for Next.js frontend
+# Updated CORS for production (we'll update this after frontend deployment)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",  # For local development
+        "https://*.netlify.app",   # For Netlify deployments
+        "https://*.vercel.app",    # For Vercel deployments
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,10 +35,19 @@ app.add_middleware(
 class FoodAnalyzer:
     def __init__(self):
         """Initialize the Food Analyzer (without GUI components)."""
-        self.config = self.load_config('food.json')
-        self.gemini_api_key = self.config.get('gemini_api_key')
+        # Try to load from environment variable first, then from file
+        self.gemini_api_key = os.getenv('GEMINI_API_KEY')
+        
         if not self.gemini_api_key:
-            raise ValueError("Gemini API key not found in config")
+            # Fallback to config file for local development
+            try:
+                self.config = self.load_config('food.json')
+                self.gemini_api_key = self.config.get('gemini_api_key')
+            except:
+                pass
+        
+        if not self.gemini_api_key:
+            raise ValueError("Gemini API key not found. Set GEMINI_API_KEY environment variable or provide food.json")
         
         # API Configuration
         self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_api_key}"
@@ -142,7 +155,7 @@ Do not include any additional text, explanations, or commentary."""
             # Parse results
             parsed_results = self.parse_analysis_results(analysis_text)
             
-            # Save report
+            # Save report (in production, this would be in a temporary directory)
             report_path = self.save_analysis_report(parsed_results, analysis_text, image_array)
             
             return {
@@ -194,7 +207,9 @@ Do not include any additional text, explanations, or commentary."""
     def save_analysis_report(self, analysis_data, raw_analysis, image_array=None):
         """Save analysis results to a report file."""
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        report_dir = "analysis_reports"
+        
+        # Use /tmp directory in production or create reports directory locally
+        report_dir = "/tmp/analysis_reports" if os.path.exists("/tmp") else "analysis_reports"
         os.makedirs(report_dir, exist_ok=True)
         
         report_path = os.path.join(report_dir, f"analysis_report_{timestamp}.txt")
@@ -214,8 +229,16 @@ Do not include any additional text, explanations, or commentary."""
 
     def get_all_reports(self, limit: Optional[int] = None):
         """Get all saved analysis reports."""
-        report_dir = "analysis_reports"
-        if not os.path.exists(report_dir):
+        # Check both possible report directories
+        possible_dirs = ["/tmp/analysis_reports", "analysis_reports"]
+        report_dir = None
+        
+        for dir_path in possible_dirs:
+            if os.path.exists(dir_path):
+                report_dir = dir_path
+                break
+        
+        if not report_dir:
             return []
         
         # Get all report files
@@ -491,7 +514,9 @@ if __name__ == "__main__":
     import uvicorn
     print("Starting Food Analysis API...")
     print("Make sure you have:")
-    print("1. food.json with your Gemini API key")
+    print("1. GEMINI_API_KEY environment variable set OR food.json with your Gemini API key")
     print("2. Required packages installed")
-    print("3. Frontend running on http://localhost:3000")
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+    print("3. Frontend running on appropriate port")
+    # Use PORT environment variable if available (required for deployment)
+    port = int(os.environ.get("PORT", 8002))
+    uvicorn.run(app, host="0.0.0.0", port=port)
