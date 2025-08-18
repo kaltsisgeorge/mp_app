@@ -1,0 +1,18 @@
+Food Analysis Report - 2025-08-17_00-19-14
+----------------------------------------
+
+RAW ANALYSIS:
+FOOD: Kiwi
+QUANTITY: 75g
+CALORIES: 42 kcal
+MICROPLASTICS: 0.5 mg/kg
+RISK: LOW
+
+
+PARSED RESULTS:
+FOOD: Kiwi
+QUANTITY: 75g
+CALORIES: 42 kcal
+MICROPLASTICS: 0.5 mg/kg
+RISK: LOW
+
