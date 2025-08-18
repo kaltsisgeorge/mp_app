@@ -26,7 +26,7 @@ app.add_middleware(
         "http://localhost:3000",  # For local development
         "https://*.netlify.app",   # For Netlify deployments
         "https://*.vercel.app",    # For Vercel deployments
-        "https://68a33f06b9b6a4425498e9b9--iridescent-mooncake-783006.netlify.app"
+        "https://microplasticsanalyzer.netlify.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
