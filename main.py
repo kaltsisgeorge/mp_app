@@ -20,17 +20,22 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Updated CORS for production (we'll update this after frontend deployment)
+# Replace your existing CORS middleware configuration with this:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # For local development
-        "https://*.netlify.app",   # For Netlify deployments
-        "https://*.vercel.app",    # For Vercel deployments
-        "https://microplasticsanalyzer.netlify.app"
+        "*",
+        "https://localhost",
+        "http://localhost", 
+        "capacitor://localhost",
+        "ionic://localhost",
+        "https://localhost:*",
+        "http://localhost:*"
     ],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 class FoodAnalyzer:
