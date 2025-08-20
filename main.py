@@ -459,6 +459,38 @@ async def analyze_food(file: UploadFile = File(...)):
         logger.error(f"Error processing upload: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/mobile-analyze")
+async def mobile_analyze_food(file: UploadFile = File(...)):
+    """Mobile-optimized endpoint with simpler response format"""
+    if not analyzer:
+        return {"success": False, "error": "Analyzer not initialized"}
+        
+    try:
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents))
+        result = analyzer.analyze_food_image(image)
+        
+        # Simplified response for mobile
+        if result["success"] and result.get("parsed_results"):
+            first_result = result["parsed_results"][0]
+            return {
+                "success": True,
+                "food": first_result.get("food", "Unknown"),
+                "microplastics": first_result.get("microplastics", "0 mg/kg"),
+                "risk": first_result.get("risk", "LOW"),
+                "calories": first_result.get("calories", "0 kcal"),
+                "quantity": first_result.get("quantity", "Unknown")
+            }
+        else:
+            return {"success": False, "error": "No food detected"}
+            
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.options("/mobile-analyze")
+async def options_mobile_analyze():
+    return {"message": "OK"}
+
 @app.get("/reports")
 async def get_reports(limit: Optional[int] = 50):
     """Get all saved analysis reports."""
